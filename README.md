@@ -1,42 +1,78 @@
-**[NEW!] Detailed examples for VQ Challenge submission available here: [VQ2D README](./VQ2D/README.md)**
+# Episodic Memory: Textual Answer Extraction from Egocentric Videos via NLQ
 
-**[NEW!] 2022 [Ego4D Challenges](https://ego4d-data.org/docs/challenge/) now open for Episodic Memory**
-- [Natural Language Queries](https://eval.ai/web/challenges/challenge-page/1629/overview)
-- [Visual Queries 2D](https://eval.ai/web/challenges/challenge-page/1843/overview)
-- [Moments queries](https://eval.ai/web/challenges/challenge-page/1626/overview)
-- [Visual Queries 3D](https://eval.ai/web/challenges/challenge-page/1646/overview)
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-Framework-ee4c2c)
+![Dataset](https://img.shields.io/badge/Dataset-Ego4D-green)
 
-Please note that:
-- VQ test annotations for challenge submissions are now available: [Ego4D Challenges](https://ego4d-data.org/docs/challenge/)
-- NLQ annotations have a known issue where ~14% of annotations have a near-0 query window and will result in under reported performance for the challenge (which will be corrected with a future dataset update): [NLQ Forum Post](https://discuss.ego4d-data.org/t/nlq-annotation-zero-temporal-windows/36)
+## 📌 Overview
+Natural Language Querying (NLQ) tasks for video retrieval typically require viewers to manually watch retrieved video segments to find answers. This is especially challenging with **egocentric (first-person) videos**, which are often lengthy and highly unstructured.
 
-# Ego4D Episodic Memory Benchmark
+This repository proposes a novel **two-step methodology** to directly extract concise textual answers from egocentric videos. By localizing the relevant segments first and only passing the essential frames to a Vision-Language Model (VLM), our strategy significantly reduces computational load while maintaining high answer quality.
 
-[EGO4D](https://ego4d-data.org/docs/) is the world's largest egocentric (first person) video ML dataset and benchmark suite.
+## 🧠 Methodology
+Our approach is divided into two main stages:
 
-For more information on Ego4D or to download the dataset, read: [Start Here](https://ego4d-data.org/docs/start-here/).
+1. **Video Segment Localization (VSLNet & EgoVLP)**
+   * We utilize **EgoVLP** pre-extracted features combined with **VSLNet**.
+   * The model is trained on the **Ego4D dataset's** NLQ task to identify and predict the most relevant video segments corresponding to the natural language query.
+   * From these predictions, we filter and select the top 50 most successful localized segments.
 
-The [Episodic Memory Benchmark](https://ego4d-data.org/docs/benchmarks/episodic-memory/) aims to make past video queryable and requires localizing where the answer can be seen within the user’s past video.  The repository contains the code needed to reproduce the results in the [Ego4D: Around the World in 3,000 Hours of Egocentric Video](https://arxiv.org/abs/2110.07058).
+2. **Textual Answer Generation (Video-LLaVA)**
+   * The selected top video segments, alongside the user's original query, are processed by **Video-LLaVA** (a powerful Vision-Language Model).
+   * Video-LLaVA "watches" the shortened segments and directly generates a concise textual answer, improving both retrieval efficiency and the end-user experience.
 
-There are 4 related tasks within a benchmark. Please see the README within each benchmark for details on setting up the codebase.
+## 📊 Evaluation & Performance
+The generated textual answers are rigorously evaluated against multiple standard NLP benchmarks to ensure accuracy and contextual relevance. Our metrics include:
+* **F1 Score**
+* **BLEU**
+* **ROUGE-L**
+* **BERTScore**
+* **METEOR**
 
-# [VQ2D](./VQ2D/README.md): *Visual Queries with 2D Localization*
+*Results demonstrate that this approach effectively provides accurate, concise answers to complex natural language queries in unstructured egocentric environments.*
 
-This task asks: “When did I last see [this]?”  Given an egocentric video clip and an image crop depicting the query object, the goal is to return the last occurrence of the object in the input video, in terms of the tracked bounding box (2D + temporal localization).  The novelty of this task is to upgrade traditional object instance recognition to deal with video, and particularly ego-video with challenging view transformations.
+## ⚙️ Getting Started
 
-# [VQ3D](./VQ3D/README.md): *Visual Queries with 3D Localization*
+### Prerequisites
+* Python 3.8+
+* PyTorch
+* [Other requirements...]
 
-This task asks, “Where did I last see [this]?”  Given an egocentric video clip and an image crop depicting the query object, the goal is to localize the last time it was seen in the video and return a 3D displacement vector from the camera center of the query frame to the center of the object in 3D.  Hence, this task builds on the 2D localization above, expanding it to require localization in the 3D environment.  The task is novel in how it requires both video object instance recognition and 3D reasoning.
+### Installation
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/themoonoutofhaze/episodic-memory.git
+   cd episodic-memory
+   ```
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-# [NLQ](./NLQ/README.md): *Natural Language Queries*
+### Data Preparation
+1. Download the **Ego4D dataset** and pre-extracted **EgoVLP** features.
+2. Place the data in the `/data` directory as structured below:
+   ```text
+   /data
+     ├── ego4d_features/
+     ├── annotations/
+   ```
 
-This task asks, "What/when/where....?" -- general natural language questions about the video past.    Given a video clip and a query expressed in natural language, the goal is to localize the temporal window within all the video history where the answer to the question is evident.  The task is novel because it requires searching through video to answer flexible linguistic queries.  For brevity, these example clips illustrate the video surrounding the ground truth (whereas the original input videos are each ~8 min). 
+### Usage
+*(Add your specific run commands here)*
 
-# [MQ](./MQ/README.md): *Moments Queries*
+**To run the segment localization (VSLNet):**
+```bash
+python run_localization.py --config config.yaml
+```
 
-This task asks, "When did I do X?”  Given an egocentric video and an activity name (i.e., a "moment"), the goal is to localize all instances of that activity in the past video.  The task is activity detection, but specifically for the egocentric activity of the camera wearer who is largely out of view.
+**To generate answers using Video-LLaVA:**
+```bash
+python generate_answers.py --query "Where did I leave my keys?" --video_path /path/to/video
+```
 
+## 🤝 Acknowledgments
+* **Ego4D Dataset**: For providing the extensive egocentric video data and NLQ benchmarks.
+* **Video-LLaVA**: For the underlying VLM architecture.
+* **EgoVLP & VSLNet**: For video-language pre-training and localization.
 
-License
-
-Ego4D is released under the MIT License.
